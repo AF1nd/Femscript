@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Set;
 
 public class Interpreter {
-    public Object run(Node node, StatementNode parent_statement) throws RuntimeException, ParseException, CloneNotSupportedException {
-        if (node instanceof StatementNode typed_node) {
+    public Object run(Node node, BlockNode parent_statement) throws RuntimeException, ParseException, CloneNotSupportedException {
+        if (node instanceof BlockNode typed_node) {
             if (parent_statement != null) typed_node.identifiers.putAll(parent_statement.identifiers);
 
             for (int i = 0; i < typed_node.nodes.size(); i++) {
@@ -35,10 +35,10 @@ public class Interpreter {
                 if (opperrand == null)
                     throw new RuntimeException("Unar operator must have one opperrand");
                 if (operator.is(TokenType.WAIT)) {
-                    if (!(opperrand instanceof Number)) throw new RuntimeException("Delay operator accept only numbers");
+                    if (!(opperrand instanceof Number)) throw new RuntimeException("Delay operator can work only with numbers");
 
                     try {
-                        Thread.sleep((long) opperrand * 1000);
+                        Thread.sleep((long) ((double) opperrand * 1000));
                     } catch (InterruptedException err) {
                         throw new RuntimeException(err);
                     }
@@ -61,7 +61,7 @@ public class Interpreter {
 
                 if (!(func instanceof FunctionDefineNode)) throw new RuntimeException("Function " + fn_id + " doesn't exist");
 
-                final StatementNode block = ((FunctionDefineNode) func).block.clone();
+                final BlockNode block = ((FunctionDefineNode) func).block.clone();
 
                 for (int i = 0; i < args.size(); i++) {
                     final Node arg = args.get(i);
@@ -72,7 +72,7 @@ public class Interpreter {
 
                 return run(block, parent_statement);
             } else if (node instanceof NumberNode typed_node) {
-                return NumberFormat.getInstance().parse(typed_node.value.value).longValue();
+                return Double.parseDouble(typed_node.value.value);
             } else if (node instanceof StringNode typed_node) {
                 return typed_node.value.value;
             } else if (node instanceof BooleanNode typed_node) {
@@ -86,22 +86,22 @@ public class Interpreter {
                     final Object left = run(typed_node.left, parent_statement);
                     final Object right = run(typed_node.right, parent_statement);
 
-                    if (left instanceof Number && right instanceof Number) return ((long) left) > ((long) right);
+                    if (left instanceof Number && right instanceof Number) return ((double) left) > ((double) right);
                 } else if (typed_node.operator.is(TokenType.SMALLER)) {
                     final Object left = run(typed_node.left, parent_statement);
                     final Object right = run(typed_node.right, parent_statement);
 
-                    if (left instanceof Number && right instanceof Number) return ((long) left) < ((long) right);
+                    if (left instanceof Number && right instanceof Number) return ((double) left) < ((double) right);
                 } else if (typed_node.operator.is(TokenType.BIGGER_OR_EQ)) {
                     final Object left = run(typed_node.left, parent_statement);
                     final Object right = run(typed_node.right, parent_statement);
 
-                    if (left instanceof Number && right instanceof Number) return ((long) left) >= ((long) right);
+                    if (left instanceof Number && right instanceof Number) return ((double) left) >= ((double) right);
                 } else if (typed_node.operator.is(TokenType.SMALLER_OR_EQ)) {
                     final Object left = run(typed_node.left, parent_statement);
                     final Object right = run(typed_node.right, parent_statement);
 
-                    if (left instanceof Number && right instanceof Number) return ((long) left) <= ((long) right);
+                    if (left instanceof Number && right instanceof Number) return ((double) left) <= ((double) right);
                 }
             } else if (node instanceof IfStatementNode typed_node) {
                 boolean successful = false;
@@ -182,8 +182,8 @@ public class Interpreter {
                         }
                     } else throw new RuntimeException("Assign operator can only use with identifiers");
                 } else {
-                    final long left_number = (long) run(left, parent_statement);
-                    final long right_number = (long) run(right, parent_statement);
+                    final double left_number = (double) run(left, parent_statement);
+                    final double right_number = (double) run(right, parent_statement);
 
                     try {
                         switch (operator.type) {

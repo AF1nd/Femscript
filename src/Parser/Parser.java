@@ -15,7 +15,7 @@ interface NeededCallback {
 public class Parser {
     private final List<Token> _tokens;
 
-    private final StatementNode _root_node = new StatementNode();
+    private final BlockNode _root_node = new BlockNode();
 
     private static final List<Token> _parsed_tokens = new ArrayList<Token>();
 
@@ -147,9 +147,9 @@ public class Parser {
 
                 push_to_parsed(token);
 
-                final StatementNode else_statement = parse_else_statement(result.get_second() + 1);
+                final BlockNode else_statement = parse_else_statement(result.second() + 1);
                 if (!conditions.isEmpty())
-                    return new IfStatementNode(conditions, new Parser(result.get_first()).parse_all(), else_statement);
+                    return new IfStatementNode(conditions, new Parser(result.first()).parse_all(), else_statement);
                 else throw new FemscriptSyntaxException("If-statement must have > 0 conditions", _current_line);
             }
         }
@@ -157,7 +157,7 @@ public class Parser {
         return null;
     }
 
-    private StatementNode parse_else_statement(int index) throws FemscriptSyntaxException {
+    private BlockNode parse_else_statement(int index) throws FemscriptSyntaxException {
         final Token token = _tokens.size() - 1 >= index ? _tokens.get(index) : null;
         if (token != null && token.is(TokenType.ELSE) && !is_parsed(token)) {
             int begin_index = 0;
@@ -174,8 +174,8 @@ public class Parser {
 
             final Tuple<List<Token>, Integer> result = get_block_info(begin_index);
             if (result != null) {
-                final StatementNode statement = new StatementNode();
-                final StatementNode ast = new Parser(result.get_first()).parse_all();
+                final BlockNode statement = new BlockNode();
+                final BlockNode ast = new Parser(result.first()).parse_all();
 
                 ast.nodes.forEach(statement::add);
 
@@ -228,7 +228,7 @@ public class Parser {
 
             final Tuple<List<Token>, Integer> result = get_block_info(right_bracket_index + 1);
             if (result != null) {
-                final FunctionDefineNode node = new FunctionDefineNode(id_token.value, new Parser(result.get_first()).parse_all());
+                final FunctionDefineNode node = new FunctionDefineNode(id_token.value, new Parser(result.first()).parse_all());
 
                 args.forEach(node::add_arg);
 
@@ -242,7 +242,7 @@ public class Parser {
                     if (return_node == null)
                         throw new FemscriptSyntaxException("Function doesn't have block or return arrow", _current_line);
 
-                    final StatementNode statement = new StatementNode();
+                    final BlockNode statement = new BlockNode();
                     statement.add(return_node);
 
                     final FunctionDefineNode node = new FunctionDefineNode(id_token.value, statement);
@@ -401,16 +401,14 @@ public class Parser {
         return node;
     }
 
-    public StatementNode parse_all() throws FemscriptSyntaxException {
+    public BlockNode parse_all() throws FemscriptSyntaxException {
         for (int i = 0; i < _tokens.size(); i++) {
             _current_index = i;
 
             final Token token = _tokens.get(i);
             final Node node = main_parse_function(i);
 
-            if (node != null) {
-                _root_node.add(node);
-            }
+            if (node != null) _root_node.add(node);
 
             if (token.is(TokenType.NEWLINE)) _current_line ++;
         }

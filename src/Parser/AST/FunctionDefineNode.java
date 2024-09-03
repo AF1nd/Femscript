@@ -5,10 +5,10 @@ import java.util.List;
 
 public class FunctionDefineNode extends Node {
     public final List<IdentifierNode> args = new ArrayList<IdentifierNode>();
-    public final StatementNode block;
+    public final BlockNode block;
     public final String id;
 
-    public FunctionDefineNode(String id, StatementNode block) {
+    public FunctionDefineNode(String id, BlockNode block) {
         this.block = block;
         this.id = id;
     }

@@ -41,7 +41,7 @@ public class Lexer {
             new TokenTypeImpl(TokenType.IF, "if"),
             new TokenTypeImpl(TokenType.ELSE, "else"),
 
-            new TokenTypeImpl(TokenType.NUMBER, "\\d+"),
+            new TokenTypeImpl(TokenType.NUMBER, "[+-]?([0-9]*[.])?[0-9]+"),
             new TokenTypeImpl(TokenType.STRING, "'[^']*'"),
             new TokenTypeImpl(TokenType.ID, "[a-zA-Z_][a-zA-Z0-9_]*"),
 

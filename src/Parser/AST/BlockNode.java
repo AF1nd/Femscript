@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class StatementNode extends Node implements Cloneable {
+public class BlockNode extends Node implements Cloneable {
     public final List<Node> nodes = new ArrayList<Node>();
     public final Map<String, Node> identifiers = new HashMap<String, Node>();
 
@@ -14,7 +14,7 @@ public class StatementNode extends Node implements Cloneable {
     }
 
     @Override
-    public StatementNode clone() throws CloneNotSupportedException {
-        return (StatementNode) super.clone();
+    public BlockNode clone() throws CloneNotSupportedException {
+        return (BlockNode) super.clone();
     }
 }

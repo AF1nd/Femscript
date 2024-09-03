@@ -9,7 +9,7 @@ public class Tuple<A, B> {
         this.second = second;
     }
 
-    public A get_first() {
+    public A first() {
         return first;
     }
 
@@ -17,16 +17,11 @@ public class Tuple<A, B> {
         this.first = first;
     }
 
-    public B get_second() {
+    public B second() {
         return second;
     }
 
     public void set_second(B second) {
         this.second = second;
-    }
-
-    @Override
-    public String toString() {
-        return "(" + first + ", " + second + ")";
     }
 }

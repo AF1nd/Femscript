@@ -1,6 +1,6 @@
 import Exceptions.FemscriptSyntaxException;
 import Lexer.Lexer;
-import Parser.AST.StatementNode;
+import Parser.AST.BlockNode;
 import Parser.Parser;
 
 import java.text.ParseException;
@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) throws FemscriptSyntaxException, ParseException, CloneNotSupportedException {
 
         String code = """
-            fn foo(a) -> a + 5
+            fn foo(a) -> a + 5.52
             
             delay 2
             
@@ -23,7 +23,7 @@ public class Main {
 
         final Lexer lexer = new Lexer(code, true);
         final Parser parser = new Parser(lexer.tokenize());
-        final StatementNode AST = parser.parse_all();
+        final BlockNode AST = parser.parse_all();
 
         System.out.println("ABSTRACT SYNTAX TREE: \n");
 
