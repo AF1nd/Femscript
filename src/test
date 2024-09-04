@@ -1,9 +1,7 @@
-fn foo(a) -> a + 5.5
+fn foo(a) {
+    assert a
 
-delay 2
-
-if 5 == 6 {
-    output foo(5)
-} else {
-    output foo(5)
+    -> a + 5
 }
+
+output foo(6)

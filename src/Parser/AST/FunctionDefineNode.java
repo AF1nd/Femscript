@@ -19,6 +19,8 @@ public class FunctionDefineNode extends Node {
 
     @Override
     public String toString() {
-        return "Function '" + id + "' |  ARGS: " + args.toString();
+        System.out.println("[ FUNC DEFINE ]: " + id + " | [ARGS]: " + args.toString());
+        block.nodes.forEach(node -> System.out.println(" > | " + node.toString()));
+        return null;
     }
 }

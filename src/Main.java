@@ -15,11 +15,13 @@ public class Main {
 
         System.out.println("ABSTRACT SYNTAX TREE: \n");
 
-        AST.nodes.forEach(node -> System.out.println(" | " + node.toString()));
+        AST.nodes.forEach(node -> {
+           if (node.toString() != null) System.out.println(" | " + node.toString());
+        });
 
-        System.out.println("RESULT: \n");
+        System.out.println("\n RESULT: \n");
 
         final Interpreter interpreter = new Interpreter();
-        interpreter.run(AST, null);
+        interpreter.run(AST, null, null);
     }
 }

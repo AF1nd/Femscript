@@ -10,4 +10,9 @@ public class UnarOperationNode extends Node {
         this.operator = operator;
         this.right = right;
     }
+
+    @Override
+    public String toString() {
+        return "[OPERATOR]: " + operator.value + " | [OPPERRAND]: " + right.toString();
+    }
 }

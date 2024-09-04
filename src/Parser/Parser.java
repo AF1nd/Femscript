@@ -15,6 +15,7 @@ interface NeededCallback {
 public class Parser {
     private final List<Token> _tokens;
 
+
     private final BlockNode _root_node = new BlockNode();
 
     private static final List<Token> _parsed_tokens = new ArrayList<Token>();
@@ -26,7 +27,7 @@ public class Parser {
             {TokenType.ASSIGN, TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.DIV};
 
     private final TokenType[] _unar_operators_token_types = new TokenType[]
-            {TokenType.OUTPUT, TokenType.WAIT, TokenType.RETURN};
+            {TokenType.OUTPUT, TokenType.WAIT, TokenType.RETURN, TokenType.ASSERT};
 
     private final TokenType[] _condition_contexts_tokens = new TokenType[]
             {TokenType.AND, TokenType.OR};

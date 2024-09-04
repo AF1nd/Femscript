@@ -68,6 +68,7 @@ public class Lexer {
 
             new TokenTypeImpl(TokenType.OUTPUT, "output"),
             new TokenTypeImpl(TokenType.WAIT, "delay"),
+            new TokenTypeImpl(TokenType.ASSERT, "assert"),
 
             new TokenTypeImpl(TokenType.NEWLINE, "\n"),
             new TokenTypeImpl(TokenType.SPACE, "\\s+"),

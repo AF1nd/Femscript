@@ -14,4 +14,9 @@ public class FunctionCallNode extends Node {
     public void add_arg(Node arg) {
         args.add(arg);
     }
+
+    @Override
+    public String toString() {
+        return "[ FUNC CALL NODE ]: [FUNC]: " + fn_id + " [ARGS]: " + args.toString();
+    }
 }

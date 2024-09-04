@@ -45,6 +45,7 @@ public enum TokenType {
     OUTPUT,
     RETURN,
     WAIT,
+    ASSERT,
 
     BEGIN,
     END,
