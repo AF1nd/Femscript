@@ -201,23 +201,19 @@ public class Interpreter {
                         final double left_number = (double) run(left, parent_statement, null);
                         final double right_number = (double) run(right, parent_statement, null);
 
-                        try {
-                            switch (operator.type) {
-                                case DIV -> {
-                                    return left_number / right_number;
-                                }
-                                case MUL -> {
-                                    return left_number * right_number;
-                                }
-                                case PLUS -> {
-                                    return left_number + right_number;
-                                }
-                                case MINUS -> {
-                                    return left_number - right_number;
-                                }
+                        switch (operator.type) {
+                            case DIV -> {
+                                return left_number / right_number;
                             }
-                        } catch (Exception err) {
-                            err.printStackTrace();
+                            case MUL -> {
+                                return left_number * right_number;
+                            }
+                            case PLUS -> {
+                                return left_number + right_number;
+                            }
+                            case MINUS -> {
+                                return left_number - right_number;
+                            }
                         }
                     }
                 }

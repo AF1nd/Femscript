@@ -38,12 +38,10 @@ public class Parser {
     private final TokenType[] _booleans_token_types = new TokenType[]
             {TokenType.TRUE, TokenType.FALSE};
 
-    private Integer _current_index;
     private Integer _current_line = 1;
 
     public Parser(List<Token> tokens) {
         this._tokens = tokens;
-        _current_index = 0;
     }
 
     private void push_to_parsed(Token token) {
@@ -76,21 +74,14 @@ public class Parser {
         return null;
     }
 
-    private BinaryOperationNode parse_binary_operation(int index) throws FemscriptSyntaxException {
-        final Token token = _tokens.size() - 1 >= index ? _tokens.get(index) : null;
-        if (token != null && token.is(_operators_token_types) && !is_parsed(token)) {
-            push_to_parsed(token);
-
-            final NeededCallback needed_callback = needed(index);
-            final Token left = needed_callback.needed(-1, _arguments_or_values_token_types);
-
-            final Node left_node = left.is(TokenType.ID) ? new IdentifierNode(left) : (left.is(TokenType.STRING) ? new StringNode(left) : new NumberNode(left));
+    private BinaryOperationNode parse_binary_operation(int index, Node left_Node) throws FemscriptSyntaxException {
+        final Token token = get_token_by_index(index);
+        if (token != null && token.is(_operators_token_types) && !is_parsed(token) && left_Node != null) {
             final Node right_node = parse_arg_or_value(index + 1);
 
             push_to_parsed(token);
-            push_to_parsed(left);
 
-            return new BinaryOperationNode(left_node, right_node, token);
+            return new BinaryOperationNode(left_Node, right_node, token);
         }
 
         return null;
@@ -159,7 +150,7 @@ public class Parser {
     }
 
     private BlockNode parse_else_statement(int index) throws FemscriptSyntaxException {
-        final Token token = _tokens.size() - 1 >= index ? _tokens.get(index) : null;
+        final Token token = get_token_by_index(index);
         if (token != null && token.is(TokenType.ELSE) && !is_parsed(token)) {
             int begin_index = 0;
 
@@ -212,16 +203,16 @@ public class Parser {
                 throw new FemscriptSyntaxException("Function " + id_token.value + " need right arguments bracket", _current_line);
 
             final List<IdentifierNode> args = new ArrayList<IdentifierNode>();
-            
-            int arg_index = 0;
 
             for (int i = index + 3; i < right_bracket_index; i++) {
                 final Token token_under_index = _tokens.get(i);
                 if (token_under_index.is(TokenType.COMMA)) continue;
                 else {
-                    arg_index ++;
                     if (!token_under_index.is(TokenType.ID))
                         throw new FemscriptSyntaxException("Function defined arg must be identifier", _current_line);
+
+                    if (token_under_index.is(TokenType.ID) && !args.isEmpty() && !_tokens.get(i - 1).is(TokenType.COMMA))
+                        throw new FemscriptSyntaxException("Between function args need comma", _current_line);
 
                     args.add(new IdentifierNode(token_under_index));
                 }
@@ -274,23 +265,23 @@ public class Parser {
                 for (int i = index + 2; i < _tokens.size(); i++) {
                     final Token arg_token = _tokens.get(i);
                     if (arg_token != null) {
-                        if (is_parsed(arg_token)) continue;
-
                         if (arg_token.is(TokenType.RIGHT_BRACKET)) {
                             push_to_parsed(arg_token);
                             break;
                         } else if (arg_token.is(TokenType.COMMA)) {
                             push_to_parsed(arg_token);
-                            continue;
                         } else {
+                            if (is_parsed(arg_token)) continue;
                             if (arg_token.is(_arguments_or_values_token_types)) {
                                 final Node arg_node = parse_arg_or_value(i);
                                 if (arg_node != null) {
                                     final Token previous_argument_token = _tokens.get(i - 1);
+
                                     if (previous_argument_token != null && !node.args.isEmpty() && !previous_argument_token.is(TokenType.COMMA))
                                         throw new FemscriptSyntaxException("Between function call arguments need comma", _current_line);
 
                                     node.add_arg(arg_node);
+                                    push_to_parsed(arg_token);
                                  }
                             }
                         }
@@ -307,8 +298,12 @@ public class Parser {
         return null;
     }
 
+    private Token get_token_by_index(int index) {
+        return _tokens.size() - 1 >= index ? _tokens.get(index) : null;
+    }
+
     private BooleanNode parse_boolean(int index) {
-        final Token token = _tokens.get(index);
+        final Token token = get_token_by_index(index);
         if (token != null && token.is(_booleans_token_types) && !is_parsed(token)) {
             push_to_parsed(token);
             return new BooleanNode(token);
@@ -320,16 +315,14 @@ public class Parser {
     private ConditionNode parse_condition(int index) throws FemscriptSyntaxException {
         final Token token = _tokens.get(index);
         if (token != null && token.is(_logical_operators_token_types) && !is_parsed(token)) {
-            final Token left = _tokens.get(index - 1);
             final Token context_token = _tokens.get(index - 2);
 
             final String context = context_token.is(_condition_contexts_tokens) ? context_token.type.name() : "MAIN";
 
-            final Node left_node = left.is(TokenType.ID) ? new IdentifierNode(left) : (left.is(TokenType.STRING) ? new StringNode(left) : new NumberNode(left));
+            final Node left_node = parse_arg_or_value(index - 1);
             final Node right_node = parse_arg_or_value(index + 1);
 
             push_to_parsed(token);
-            push_to_parsed(left);
 
             if (right_node != null) return new ConditionNode(left_node, right_node, token, context);
         }
@@ -340,20 +333,71 @@ public class Parser {
     private Node parse_arg_or_value(int index) throws FemscriptSyntaxException {
         final NeededCallback needed = needed(index);
 
-        final Token token = needed.needed(0, _arguments_or_values_token_types);
-        if (is_parsed(token)) return null;
+        FunctionCallNode function_call_node = null;
 
-        final BinaryOperationNode binary_operation_node = parse_binary_operation(index + 1);
+        final Tuple<Integer, Integer> function_call_tuple = get_function_call_indexes(index);
+
+        int function_call_start;
+        int function_call_end;
+
+        boolean add = true;
+
+        if (function_call_tuple != null) {
+            function_call_start = function_call_tuple.first();
+            function_call_end = function_call_tuple.second();
+
+            function_call_node = parse_function_call(function_call_start);
+
+            if (function_call_node != null) {
+                index = function_call_end + 1;
+                add = false;
+            }
+        }
+
         final BooleanNode boolean_node = parse_boolean(index);
-        final FunctionCallNode function_call_node = parse_function_call(index);
 
-        Object node = binary_operation_node != null ? binary_operation_node : (boolean_node != null ? boolean_node : function_call_node);
+        Node node = boolean_node != null ? boolean_node : function_call_node;
 
         if (node == null) {
+            Token token;
+
+            token = needed.needed(0, _arguments_or_values_token_types);
+            if (is_parsed(token)) return null;
+
+            push_to_parsed(token);
             node = token.is(TokenType.ID) ? new IdentifierNode(token) : (token.is(TokenType.STRING) ? new StringNode(token) : (token.is(TokenType.NUMBER) ? new NumberNode(token) : new NullNode(token)));
         }
 
+        final BinaryOperationNode binary_operation_node = parse_binary_operation(add ? index + 1 : index, node);
+        if (binary_operation_node != null) node = binary_operation_node;
+
         return (Node) node;
+    }
+
+    private Tuple<Integer, Integer> get_function_call_indexes(int start_or_end_index) {
+        final Token token = _tokens.get(start_or_end_index);
+
+        if (token != null && token.is(TokenType.ID) && _tokens.get(start_or_end_index + 1).is(TokenType.LEFT_BRACKET)) {
+            for (int i = start_or_end_index; i < _tokens.size(); i++) {
+                final Token token_under_index = _tokens.get(i);
+                if (token_under_index != null && token_under_index.is(TokenType.RIGHT_BRACKET)) {
+                   return new Tuple<>(start_or_end_index, i);
+                }
+            }
+        }
+
+        if (token != null && token.is(TokenType.RIGHT_BRACKET)) {
+            for (int i = start_or_end_index; i > 0; i--) {
+                final Token token_under_index = _tokens.get(i);
+                if (token_under_index != null && token_under_index.is(TokenType.ID)) {
+                    final Token next = _tokens.get(i + 1);
+                    if (next != null && next.is(TokenType.LEFT_BRACKET))
+                        return new Tuple<>(i, start_or_end_index);
+                }
+            }
+        }
+
+        return null;
     }
 
     private Tuple<List<Token>, Integer> get_block_info(int block_start_index) throws FemscriptSyntaxException {
@@ -364,7 +408,7 @@ public class Parser {
 
             int end_index = 0;
 
-            final List<Token> tokens = new ArrayList<Token>();
+            final List<Token> tokens = new ArrayList<>();
 
             for (int i = block_start_index; i < _tokens.size(); i++) {
                 final Token token_under_index = _tokens.get(i);
@@ -384,7 +428,7 @@ public class Parser {
 
             if (begins_finded != ends_finded) throw new FemscriptSyntaxException("Block doesn't have end", _current_line);
 
-            return new Tuple<List<Token>, Integer>(tokens, end_index);
+            return new Tuple<>(tokens, end_index);
         }
 
         return null;
@@ -393,7 +437,6 @@ public class Parser {
     private Node main_parse_function(int index) throws FemscriptSyntaxException {
         Node node = parse_variable_define(index);
 
-        if (node == null) node = parse_binary_operation(index);
         if (node == null) node = parse_unar_operation(index);
         if (node == null) node = parse_if_statement(index);
         if (node == null) node = parse_function_define(index);
@@ -404,8 +447,6 @@ public class Parser {
 
     public BlockNode parse_all() throws FemscriptSyntaxException {
         for (int i = 0; i < _tokens.size(); i++) {
-            _current_index = i;
-
             final Token token = _tokens.get(i);
             final Node node = main_parse_function(i);
 

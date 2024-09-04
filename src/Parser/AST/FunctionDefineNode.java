@@ -20,7 +20,11 @@ public class FunctionDefineNode extends Node {
     @Override
     public String toString() {
         System.out.println("[ FUNC DEFINE ]: " + id + " | [ARGS]: " + args.toString());
+
         block.nodes.forEach(node -> System.out.println(" > | " + node.toString()));
+
+        System.out.println("[ FUNC DEFINE END ]");
+
         return null;
     }
 }

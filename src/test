@@ -4,4 +4,4 @@ fn foo(a) {
     -> a + 5
 }
 
-output foo(6)
+output foo(6) + foo(6) + foo(5)
