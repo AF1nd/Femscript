@@ -8,15 +8,15 @@ import java.text.ParseException;
 public class Main {
     public static void main(String[] args) throws FemscriptSyntaxException, ParseException, CloneNotSupportedException {
 
-        String code = """
-            fn foo(a) -> a + 5.52
+        final String code = """
+            fn foo(a) -> a + 5.5
             
             delay 2
             
             if 5 == 6 {
                 output foo(5)
             } else {
-                output foo(10)
+                output foo(5)
             }
             
             """;

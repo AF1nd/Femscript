@@ -40,6 +40,8 @@ public enum TokenType {
     TRUE,
     FALSE,
 
+    NULL,
+
     OUTPUT,
     RETURN,
     WAIT,

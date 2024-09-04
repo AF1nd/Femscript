@@ -77,6 +77,8 @@ public class Interpreter {
                 return typed_node.value.value;
             } else if (node instanceof BooleanNode typed_node) {
                 return typed_node.bool;
+            } else if (node instanceof NullNode typed_node) {
+                return null;
             } else if (node instanceof ConditionNode typed_node) {
                 if (typed_node.operator.is(TokenType.EQ)) {
                     return run(typed_node.left, parent_statement) == run(typed_node.right, parent_statement);

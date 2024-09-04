@@ -349,7 +349,7 @@ public class Parser {
         Object node = binary_operation_node != null ? binary_operation_node : (boolean_node != null ? boolean_node : function_call_node);
 
         if (node == null) {
-            node = token.is(TokenType.ID) ? new IdentifierNode(token) : (token.is(TokenType.STRING) ? new StringNode(token) : new NumberNode(token));
+            node = token.is(TokenType.ID) ? new IdentifierNode(token) : (token.is(TokenType.STRING) ? new StringNode(token) : (token.is(TokenType.NUMBER) ? new NumberNode(token) : new NullNode(token)));
         }
 
         return (Node) node;

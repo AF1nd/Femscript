@@ -57,6 +57,8 @@ public class Lexer {
             new TokenTypeImpl(TokenType.TRUE, "true"),
             new TokenTypeImpl(TokenType.FALSE, "false"),
 
+            new TokenTypeImpl(TokenType.NULL, "null"),
+
             new TokenTypeImpl(TokenType.OUTPUT, "output"),
             new TokenTypeImpl(TokenType.WAIT, "delay"),
 
