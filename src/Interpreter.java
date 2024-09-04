@@ -1,14 +1,14 @@
+import Exceptions.FemscriptRuntimeExpection;
 import Lexer.Token;
 import Lexer.TokenType;
 import Parser.AST.*;
 
-import java.text.ParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class Interpreter {
-    public Object run(Node node, BlockNode parent_statement, Boolean assertion) throws RuntimeException, ParseException, CloneNotSupportedException {
+    public Object run(Node node, BlockNode parent_statement, Boolean assertion) throws FemscriptRuntimeExpection {
         try {
             if (node instanceof BlockNode typed_node) {
                 if (parent_statement != null) typed_node.identifiers.putAll(parent_statement.identifiers);
@@ -40,19 +40,19 @@ public class Interpreter {
 
                     if (opperrand == null) {
                         if (operator.is(TokenType.ASSERT)) {
-                            throw new RuntimeException("Assertion failed");
+                            throw new FemscriptRuntimeExpection("Assertion failed");
                         }
 
-                        throw new RuntimeException("Unar operator must have one opperrand");
+                        throw new FemscriptRuntimeExpection("Unar operator must have one opperrand");
                     }
 
                     if (operator.is(TokenType.WAIT)) {
-                        if (!(opperrand instanceof Number)) throw new RuntimeException("Delay operator can work only with numbers");
+                        if (!(opperrand instanceof Number)) throw new FemscriptRuntimeExpection("Delay operator can work only with numbers");
 
                         try {
                             Thread.sleep((long) ((double) opperrand * 1000));
                         } catch (InterruptedException err) {
-                            throw new RuntimeException(err);
+                           err.printStackTrace();
                         }
                     }
                     else if (operator.is(TokenType.OUTPUT)) System.out.println(opperrand.toString());
@@ -64,7 +64,7 @@ public class Interpreter {
 
                     if (assertion != null && assertion) return null;
 
-                    throw new RuntimeException("ID " + typed_node.identifier.value + " doesn't exist");
+                    throw new FemscriptRuntimeExpection("ID " + typed_node.identifier.value + " doesn't exist");
                 } else if (node instanceof FunctionDefineNode typed_node) {
                     parent_statement.identifiers.put(typed_node.id, typed_node);
                 } else if (node instanceof FunctionCallNode typed_node) {
@@ -73,7 +73,7 @@ public class Interpreter {
 
                     final Node func = parent_statement.identifiers.get(fn_id);
 
-                    if (!(func instanceof FunctionDefineNode)) throw new RuntimeException("Function " + fn_id + " doesn't exist");
+                    if (!(func instanceof FunctionDefineNode)) throw new FemscriptRuntimeExpection("Function " + fn_id + " doesn't exist");
 
                     final BlockNode block = ((FunctionDefineNode) func).block.clone();
 
@@ -132,7 +132,7 @@ public class Interpreter {
                     }
 
                     if (main_condition == null)
-                        throw new RuntimeException("If-statement must have main condition");
+                        throw new FemscriptRuntimeExpection("If-statement must have main condition");
                     else {
                         final Set<ConditionNode> successful_conditions = new HashSet<ConditionNode>();
 
@@ -194,9 +194,9 @@ public class Interpreter {
                             } else {
                                 if (parent_statement.identifiers.containsKey(typed_left.identifier.value)) {
                                     parent_statement.identifiers.put(typed_left.identifier.value, right);
-                                } else throw new RuntimeException("Variable " + typed_left.identifier.value + " doesn't defined");
+                                } else throw new FemscriptRuntimeExpection("Variable " + typed_left.identifier.value + " doesn't defined");
                             }
-                        } else throw new RuntimeException("Assign operator can only use with identifiers");
+                        } else throw new FemscriptRuntimeExpection("Assign operator can only use with identifiers");
                     } else {
                         final double left_number = (double) run(left, parent_statement, null);
                         final double right_number = (double) run(right, parent_statement, null);
@@ -217,7 +217,7 @@ public class Interpreter {
                                 }
                             }
                         } catch (Exception err) {
-                            throw new RuntimeException(err);
+                            err.printStackTrace();
                         }
                     }
                 }
