@@ -15,7 +15,6 @@ interface NeededCallback {
 public class Parser {
     private final List<Token> _tokens;
 
-
     private final BlockNode _root_node = new BlockNode();
 
     private static final List<Token> _parsed_tokens = new ArrayList<Token>();
@@ -191,12 +190,21 @@ public class Parser {
 
             int right_bracket_index = 0;
 
+            int finded_left_brackets = 0;
+            int finded_right_brackets = 0;
+
             for (int i = index + 2; i < _tokens.size(); i++) {
                 final Token token_under_index = _tokens.get(i);
-                if (token_under_index != null && token_under_index.is(TokenType.RIGHT_BRACKET) && !is_parsed(token_under_index)) {
-                    right_bracket_index = i;
-                    break;
+                if (token_under_index != null) {
+                    if (token_under_index.is(TokenType.RIGHT_BRACKET)) {
+                        right_bracket_index = i;
+                        finded_right_brackets ++;
+                    } else if (token_under_index.is(TokenType.LEFT_BRACKET)) {
+                        finded_left_brackets ++;
+                    }
                 }
+
+                if (finded_left_brackets == finded_right_brackets) break;
             }
 
             if (right_bracket_index == 0)
@@ -205,13 +213,13 @@ public class Parser {
             final List<IdentifierNode> args = new ArrayList<IdentifierNode>();
 
             for (int i = index + 3; i < right_bracket_index; i++) {
-                final Token token_under_index = _tokens.get(i);
+                final Token token_under_index = get_token_by_index(i);
                 if (token_under_index.is(TokenType.COMMA)) continue;
                 else {
                     if (!token_under_index.is(TokenType.ID))
                         throw new FemscriptSyntaxException("Function defined arg must be identifier", _current_line);
 
-                    if (token_under_index.is(TokenType.ID) && !args.isEmpty() && !_tokens.get(i - 1).is(TokenType.COMMA))
+                    if (token_under_index.is(TokenType.ID) && !args.isEmpty() && !get_token_by_index(i - 1).is(TokenType.COMMA))
                         throw new FemscriptSyntaxException("Between function args need comma", _current_line);
 
                     args.add(new IdentifierNode(token_under_index));
@@ -221,11 +229,9 @@ public class Parser {
             final Tuple<List<Token>, Integer> result = get_block_info(right_bracket_index + 1);
             if (result != null) {
                 final FunctionDefineNode node = new FunctionDefineNode(id_token.value, new Parser(result.first()).parse_all());
-
                 args.forEach(node::add_arg);
 
                 push_to_parsed(token);
-
                 return node;
             } else {
                 final Token return_token = needed(right_bracket_index).needed(1, new TokenType[] {TokenType.RETURN});
@@ -250,24 +256,33 @@ public class Parser {
     }
 
     private FunctionCallNode parse_function_call(int index) throws FemscriptSyntaxException {
-        final Token token = _tokens.get(index);
-        final Token previous_token = index > 0 ? _tokens.get(index - 1) : null;
+        final Token token = get_token_by_index(index);
+        final Token previous_token = index > 0 ? get_token_by_index(index - 1) : null;
 
         if (previous_token != null) {
             if (previous_token.is(TokenType.DEFINE_FUNCTION)) return null;
         }
 
         if (token != null && token.is(TokenType.ID) && !is_parsed(token)) {
-            final Token left_bracket_token = _tokens.get(index + 1);
+            final Token left_bracket_token = get_token_by_index(index + 1);
             if (left_bracket_token != null && left_bracket_token.is(TokenType.LEFT_BRACKET)) {
                 final FunctionCallNode node = new FunctionCallNode(token.value);
 
-                for (int i = index + 2; i < _tokens.size(); i++) {
-                    final Token arg_token = _tokens.get(i);
+                int right_bracket_index = 0;
+
+                int finded_left_brackets = 0;
+                int finded_right_brackets = 0;
+
+                for (int i = index + 1; i < _tokens.size(); i++) {
+                    final Token arg_token = get_token_by_index(i);
                     if (arg_token != null) {
                         if (arg_token.is(TokenType.RIGHT_BRACKET)) {
+                            finded_right_brackets ++;
                             push_to_parsed(arg_token);
-                            break;
+
+                            if (finded_right_brackets == finded_left_brackets) break;
+                        } else if (arg_token.is(TokenType.LEFT_BRACKET)) {
+                            finded_left_brackets ++;
                         } else if (arg_token.is(TokenType.COMMA)) {
                             push_to_parsed(arg_token);
                         } else {
@@ -275,7 +290,7 @@ public class Parser {
                             if (arg_token.is(_arguments_or_values_token_types)) {
                                 final Node arg_node = parse_arg_or_value(i);
                                 if (arg_node != null) {
-                                    final Token previous_argument_token = _tokens.get(i - 1);
+                                    final Token previous_argument_token = get_token_by_index(i - 1);
 
                                     if (previous_argument_token != null && !node.args.isEmpty() && !previous_argument_token.is(TokenType.COMMA))
                                         throw new FemscriptSyntaxException("Between function call arguments need comma", _current_line);
@@ -313,9 +328,9 @@ public class Parser {
     }
 
     private ConditionNode parse_condition(int index) throws FemscriptSyntaxException {
-        final Token token = _tokens.get(index);
+        final Token token = get_token_by_index(index);
         if (token != null && token.is(_logical_operators_token_types) && !is_parsed(token)) {
-            final Token context_token = _tokens.get(index - 2);
+            final Token context_token = get_token_by_index(index - 2);
 
             final String context = context_token.is(_condition_contexts_tokens) ? context_token.type.name() : "MAIN";
 
@@ -375,11 +390,11 @@ public class Parser {
     }
 
     private Tuple<Integer, Integer> get_function_call_indexes(int start_or_end_index) {
-        final Token token = _tokens.get(start_or_end_index);
+        final Token token = get_token_by_index(start_or_end_index);
 
-        if (token != null && token.is(TokenType.ID) && _tokens.get(start_or_end_index + 1).is(TokenType.LEFT_BRACKET)) {
+        if (token != null && token.is(TokenType.ID) && get_token_by_index(start_or_end_index + 1).is(TokenType.LEFT_BRACKET)) {
             for (int i = start_or_end_index; i < _tokens.size(); i++) {
-                final Token token_under_index = _tokens.get(i);
+                final Token token_under_index = get_token_by_index(i);
                 if (token_under_index != null && token_under_index.is(TokenType.RIGHT_BRACKET)) {
                    return new Tuple<>(start_or_end_index, i);
                 }
@@ -388,9 +403,9 @@ public class Parser {
 
         if (token != null && token.is(TokenType.RIGHT_BRACKET)) {
             for (int i = start_or_end_index; i > 0; i--) {
-                final Token token_under_index = _tokens.get(i);
+                final Token token_under_index = get_token_by_index(i);
                 if (token_under_index != null && token_under_index.is(TokenType.ID)) {
-                    final Token next = _tokens.get(i + 1);
+                    final Token next = get_token_by_index(i + 1);
                     if (next != null && next.is(TokenType.LEFT_BRACKET))
                         return new Tuple<>(i, start_or_end_index);
                 }
@@ -401,7 +416,8 @@ public class Parser {
     }
 
     private Tuple<List<Token>, Integer> get_block_info(int block_start_index) throws FemscriptSyntaxException {
-        final Token token = _tokens.get(block_start_index);
+        final Token token = get_token_by_index(block_start_index);
+
         if (token != null && token.is(TokenType.BEGIN)) {
             int begins_finded = 0;
             int ends_finded = 0;
@@ -411,18 +427,18 @@ public class Parser {
             final List<Token> tokens = new ArrayList<>();
 
             for (int i = block_start_index; i < _tokens.size(); i++) {
-                final Token token_under_index = _tokens.get(i);
+                final Token token_under_index = get_token_by_index(i);
                 if (token_under_index != null) {
                     if (token_under_index.is(TokenType.END) && !is_parsed(token_under_index)) {
                         ends_finded++;
                         end_index = i;
                     } else if (token_under_index.is(TokenType.BEGIN) && !is_parsed(token_under_index)) {
                         begins_finded++;
-                    } else {
-                        tokens.add(token_under_index);
                     }
 
-                    if (ends_finded == begins_finded) break;
+                    tokens.add(token_under_index);
+
+                    if (ends_finded == begins_finded && begins_finded > 0) break;
                 }
             }
 
@@ -447,11 +463,12 @@ public class Parser {
 
     public BlockNode parse_all() throws FemscriptSyntaxException {
         for (int i = 0; i < _tokens.size(); i++) {
-            final Token token = _tokens.get(i);
+            final Token token = get_token_by_index(i);
             final Node node = main_parse_function(i);
 
             if (node != null) _root_node.add(node);
 
+            assert token != null;
             if (token.is(TokenType.NEWLINE)) _current_line ++;
         }
 
