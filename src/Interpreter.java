@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 public class Interpreter {
-    private static HashMap<String, BlockNode> scripts_paths = new HashMap<>();
+    private static final HashMap<String, BlockNode> scripts_paths = new HashMap<>();
     private final String current_script_path;
 
     Interpreter(String current_script_path) {
