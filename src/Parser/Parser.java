@@ -8,6 +8,7 @@ import Parser.AST.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 interface NeededCallback {
     Token needed(Integer offset, TokenType[] types) throws FemscriptSyntaxException;
@@ -392,7 +393,7 @@ public class Parser {
     private Tuple<Integer, Integer> get_function_call_indexes(int start_or_end_index) {
         final Token token = get_token_by_index(start_or_end_index);
 
-        if (token != null && token.is(TokenType.ID) && get_token_by_index(start_or_end_index + 1).is(TokenType.LEFT_BRACKET)) {
+        if (token != null && token.is(TokenType.ID) && Objects.requireNonNull(get_token_by_index(start_or_end_index + 1)).is(TokenType.LEFT_BRACKET)) {
             for (int i = start_or_end_index; i < _tokens.size(); i++) {
                 final Token token_under_index = get_token_by_index(i);
                 if (token_under_index != null && token_under_index.is(TokenType.RIGHT_BRACKET)) {
@@ -450,6 +451,22 @@ public class Parser {
         return null;
     }
 
+    private UsingNode parse_using(int index) throws FemscriptSyntaxException {
+        final Token token = get_token_by_index(index);
+        if (token != null) {
+            if (token.is(TokenType.USING)) {
+                final Node arg = parse_arg_or_value(index + 1);
+                if (arg != null) {
+                    if (!(arg instanceof StringNode)) throw new FemscriptSyntaxException("Using argument must be path to file", _current_line);
+
+                    return new UsingNode(token, (StringNode) arg);
+                }
+            }
+        }
+
+        return null;
+    }
+
     private Node main_parse_function(int index) throws FemscriptSyntaxException {
         Node node = parse_variable_define(index);
 
@@ -457,6 +474,7 @@ public class Parser {
         if (node == null) node = parse_if_statement(index);
         if (node == null) node = parse_function_define(index);
         if (node == null) node = parse_function_call(index);
+        if (node == null) node = parse_using(index);
 
         return node;
     }

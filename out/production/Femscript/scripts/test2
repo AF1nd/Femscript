@@ -7,5 +7,3 @@ fn foo(a) {
 
    -> bar(a)
 }
-
-output foo(6) + foo(6) + foo(5)

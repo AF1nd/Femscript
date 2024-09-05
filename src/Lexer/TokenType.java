@@ -52,5 +52,7 @@ public enum TokenType {
 
     DEFINE_FUNCTION,
 
+    USING,
+
     NEWLINE,
 }

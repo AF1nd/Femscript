@@ -1,12 +1,9 @@
 package Lexer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -71,17 +68,21 @@ public class Lexer {
             new TokenTypeImpl(TokenType.ASSERT, "assert"),
 
             new TokenTypeImpl(TokenType.NEWLINE, "\n"),
+
+            new TokenTypeImpl(TokenType.USING, "using"),
+
             new TokenTypeImpl(TokenType.SPACE, "\\s+"),
     };
 
-    private String readFile(String path, Charset encoding)
-            throws IOException {
-        byte[] encoded = Files.readAllBytes(Paths.get(path));
+    private String read_file(String path, Charset encoding) throws IOException {
+        final Path real_path = Path.of(path).normalize();
+        byte[] encoded = Files.readAllBytes(real_path);
+
         return new String(encoded, encoding);
     }
 
     public Lexer(boolean debug, String path) throws IOException {
-        String code = readFile(path, Charset.defaultCharset());
+        String code = read_file(path, Charset.defaultCharset());
 
         code = code.trim();
 

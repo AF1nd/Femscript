@@ -1,13 +1,24 @@
 import Exceptions.FemscriptRuntimeExpection;
+import Lexer.Lexer;
 import Lexer.Token;
 import Lexer.TokenType;
 import Parser.AST.*;
+import Parser.Parser;
 
+import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class Interpreter {
+    private static HashMap<String, BlockNode> scripts_paths = new HashMap<>();
+    private final String current_script_path;
+
+    Interpreter(String current_script_path) {
+        this.current_script_path = current_script_path;
+    }
+
     public Object run(Node node, BlockNode parent_statement, Boolean assertion) throws FemscriptRuntimeExpection {
         try {
             if (node instanceof BlockNode typed_node) {
@@ -30,6 +41,7 @@ public class Interpreter {
                             }
                         } catch (Exception err) {
                             err.printStackTrace();
+                            break;
                         }
                     } else System.out.println("PROGRAM RUN ENDED");
                 }
@@ -57,6 +69,23 @@ public class Interpreter {
                     }
                     else if (operator.is(TokenType.OUTPUT)) System.out.println(opperrand.toString());
                     else if (operator.is(TokenType.RETURN)) return opperrand;
+                } else if (node instanceof UsingNode typed_node) {
+                    final String path = (String) run(typed_node.using, parent_statement, null);
+
+                    if (path.equals(current_script_path)) throw new FemscriptRuntimeExpection("Script cannot using itself");
+
+                    BlockNode AST = scripts_paths.get(path);
+
+                    if (AST == null) {
+                        final List<Token> tokens = new Lexer(false, path).tokenize();
+                        AST = new Parser(tokens).parse_all();
+
+                        scripts_paths.put(path, AST);
+
+                        new Interpreter(path).run(AST, null, null);
+                    }
+
+                    parent_statement.identifiers.putAll(AST.identifiers);
                 } else if (node instanceof IdentifierNode typed_node) {
                     if (parent_statement.identifiers.containsKey(typed_node.identifier.value)) {
                         return run(parent_statement.identifiers.get(typed_node.identifier.value), parent_statement, null);
@@ -88,7 +117,7 @@ public class Interpreter {
                 } else if (node instanceof NumberNode typed_node) {
                     return Double.parseDouble(typed_node.value.value);
                 } else if (node instanceof StringNode typed_node) {
-                    return typed_node.value.value;
+                    return typed_node.value.value.substring(1, typed_node.value.value.length() - 1);
                 } else if (node instanceof BooleanNode typed_node) {
                     return typed_node.bool;
                 } else if (node instanceof NullNode typed_node) {
