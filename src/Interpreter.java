@@ -5,7 +5,6 @@ import Lexer.TokenType;
 import Parser.AST.*;
 import Parser.Parser;
 
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -13,6 +12,7 @@ import java.util.Set;
 
 public class Interpreter {
     private static final HashMap<String, BlockNode> scripts_paths = new HashMap<>();
+
     private final String current_script_path;
 
     Interpreter(String current_script_path) {
@@ -20,9 +20,19 @@ public class Interpreter {
     }
 
     public Object run(Node node, BlockNode parent_statement, Boolean assertion) throws FemscriptRuntimeExpection {
+        if (parent_statement == null && node instanceof BlockNode && !scripts_paths.containsKey(current_script_path)) {
+            scripts_paths.put(current_script_path, (BlockNode) node);
+        }
+
         try {
             if (node instanceof BlockNode typed_node) {
-                if (parent_statement != null) typed_node.identifiers.putAll(parent_statement.identifiers);
+                if (parent_statement != null) {
+                    parent_statement.identifiers.forEach((key, _node) -> {
+                        if (!typed_node.identifiers.containsKey(key)) {
+                            typed_node.identifiers.put(key, _node);
+                        }
+                    });
+                };
 
                 for (int i = 0; i < typed_node.nodes.size(); i++) {
                     final Node _node = typed_node.nodes.get(i);
@@ -46,6 +56,8 @@ public class Interpreter {
                     } else System.out.println("PROGRAM RUN ENDED");
                 }
             } else {
+                if (parent_statement == null) throw new FemscriptRuntimeExpection("Node must have parent statement");
+
                 if (node instanceof UnarOperationNode typed_node) {
                     final Token operator = typed_node.operator;
                     final Object opperrand = run(typed_node.right, parent_statement, operator.is(TokenType.ASSERT) ? true : null);
@@ -149,8 +161,6 @@ public class Interpreter {
                         if (left instanceof Number && right instanceof Number) return ((double) left) <= ((double) right);
                     }
                 } else if (node instanceof IfStatementNode typed_node) {
-                    boolean successful = false;
-
                     ConditionNode main_condition = null;
 
                     for (final ConditionNode condition : typed_node.conditions) {

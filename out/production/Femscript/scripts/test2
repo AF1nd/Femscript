@@ -1,9 +1,6 @@
-fn foo(a) {
-   fn bar(b) {
-     assert b
+using 'src/scripts/test'
 
-      -> b + 5
-   }
-
-   -> bar(a)
+fn foo(arg) {
+    output bar('foo')
+    -> arg
 }
