@@ -21,6 +21,6 @@ public class Main {
         System.out.println("\n RESULT: \n");
 
         final Interpreter interpreter = new Interpreter("src/scripts/Main");
-        interpreter.run(AST, null, null);
+        interpreter.run(AST);
     }
 }
