@@ -1,6 +1,0 @@
-using 'src/scripts/test'
-
-fn foo(arg) {
-    output bar('foo')
-    -> arg
-}

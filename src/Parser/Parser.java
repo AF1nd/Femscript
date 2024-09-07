@@ -235,21 +235,23 @@ public class Parser {
                 push_to_parsed(token);
                 return node;
             } else {
-                final Token return_token = needed(right_bracket_index).needed(1, new TokenType[] {TokenType.RETURN});
-                if (return_token != null) {
-                    final UnarOperationNode return_node = parse_unar_operation(right_bracket_index + 1);
-                    if (return_node == null)
-                        throw new FemscriptSyntaxException("Function doesn't have block or return arrow", _current_line);
+                final Token return_sugar_token = needed(right_bracket_index).needed(1, new TokenType[] {TokenType.RETURN_SUGAR});
+                final Node returned_node = parse_arg_or_value(right_bracket_index + 2);
 
-                    final BlockNode statement = new BlockNode();
-                    statement.add(return_node);
+                if (returned_node == null) throw new FemscriptSyntaxException("After arrow return (=>) need value", _current_line);
 
-                    final FunctionDefineNode node = new FunctionDefineNode(id_token.value, statement);
+                final ReturnArrowSugarNode return_sugar_node = new ReturnArrowSugarNode(return_sugar_token, returned_node);
 
-                    args.forEach(node::add_arg);
+                push_to_parsed(return_sugar_token);
 
-                    return node;
-                }
+                final BlockNode statement = new BlockNode();
+                statement.add(return_sugar_node);
+
+                final FunctionDefineNode node = new FunctionDefineNode(id_token.value, statement);
+
+                args.forEach(node::add_arg);
+
+                return node;
             }
         }
 

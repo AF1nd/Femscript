@@ -19,9 +19,10 @@ public class Lexer {
 
     private final TokenTypeImpl[] _token_types = {
             new TokenTypeImpl(TokenType.VARIABLE, "var"),
-            new TokenTypeImpl(TokenType.DEFINE_FUNCTION, "fn"),
+            new TokenTypeImpl(TokenType.DEFINE_FUNCTION, "def"),
 
-            new TokenTypeImpl(TokenType.RETURN, "->"),
+            new TokenTypeImpl(TokenType.RETURN, "<-"),
+            new TokenTypeImpl(TokenType.RETURN_SUGAR, "->"),
 
             new TokenTypeImpl(TokenType.BIGGER_OR_EQ, ">="),
             new TokenTypeImpl(TokenType.SMALLER_OR_EQ, "<="),

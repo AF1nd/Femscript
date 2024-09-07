@@ -44,6 +44,7 @@ public enum TokenType {
 
     OUTPUT,
     RETURN,
+    RETURN_SUGAR,
     WAIT,
     ASSERT,
 

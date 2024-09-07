@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class Interpreter {
+public class Interpreter implements Run {
     private static final HashMap<String, BlockNode> scripts_paths = new HashMap<>();
 
     private final String current_script_path;
@@ -19,7 +19,7 @@ public class Interpreter {
         this.current_script_path = current_script_path;
     }
 
-    public Object run(Node node, BlockNode parent_statement, Boolean assertion) throws FemscriptRuntimeExpection {
+    private Object main_run(Node node, BlockNode parent_statement, Boolean assertion) throws FemscriptRuntimeExpection {
         if (parent_statement == null && node instanceof BlockNode && !scripts_paths.containsKey(current_script_path)) {
             scripts_paths.put(current_script_path, (BlockNode) node);
         }
@@ -40,12 +40,12 @@ public class Interpreter {
                         final Object result;
 
                         try {
-                            result = run(_node, typed_node, null);
+                            result = run(_node, typed_node);
 
-                            if (_node instanceof UnarOperationNode typed__node) {
-                                if (typed__node.operator.is(TokenType.RETURN)) {
-                                    if (result != null) return result;
-                                }
+                            if (_node instanceof UnarOperationNode unar_operation_node && unar_operation_node.operator.is(TokenType.RETURN)) {
+                                if (result != null) return result;
+                            } else  if (_node instanceof ReturnArrowSugarNode) {
+                                if (result != null) return result;
                             } else if (_node instanceof IfStatementNode) {
                                 if (result != null) return result;
                             }
@@ -82,7 +82,7 @@ public class Interpreter {
                     else if (operator.is(TokenType.OUTPUT)) System.out.println(opperrand.toString());
                     else if (operator.is(TokenType.RETURN)) return opperrand;
                 } else if (node instanceof UsingNode typed_node) {
-                    final String path = (String) run(typed_node.using, parent_statement, null);
+                    final String path = (String) run(typed_node.using, parent_statement);
 
                     if (path.equals(current_script_path)) throw new FemscriptRuntimeExpection("Script cannot using itself");
 
@@ -94,13 +94,13 @@ public class Interpreter {
 
                         scripts_paths.put(path, AST);
 
-                        new Interpreter(path).run(AST, null, null);
+                        new Interpreter(path).run(AST);
                     }
 
                     parent_statement.identifiers.putAll(AST.identifiers);
                 } else if (node instanceof IdentifierNode typed_node) {
                     if (parent_statement.identifiers.containsKey(typed_node.identifier.value)) {
-                        return run(parent_statement.identifiers.get(typed_node.identifier.value), parent_statement, null);
+                        return run(parent_statement.identifiers.get(typed_node.identifier.value), parent_statement);
                     }
 
                     if (assertion != null && assertion) return null;
@@ -125,7 +125,7 @@ public class Interpreter {
                         if (_arg != null) block.identifiers.put(_arg.identifier.value, arg);
                     }
 
-                    return run(block, parent_statement, null);
+                    return run(block, parent_statement);
                 } else if (node instanceof NumberNode typed_node) {
                     return Double.parseDouble(typed_node.value.value);
                 } else if (node instanceof StringNode typed_node) {
@@ -134,29 +134,31 @@ public class Interpreter {
                     return typed_node.bool;
                 } else if (node instanceof NullNode typed_node) {
                     return null;
+                } else if (node instanceof ReturnArrowSugarNode typed_node) {
+                    return run(typed_node.value, parent_statement);
                 } else if (node instanceof ConditionNode typed_node) {
                     if (typed_node.operator.is(TokenType.EQ)) {
-                        return run(typed_node.left, parent_statement, null) == run(typed_node.right, parent_statement, null);
+                        return run(typed_node.left, parent_statement) == run(typed_node.right, parent_statement);
                     } else if (typed_node.operator.is(TokenType.NOTEQ)) {
-                        return run(typed_node.left, parent_statement, null) != run(typed_node.right, parent_statement, null);
+                        return run(typed_node.left, parent_statement) != run(typed_node.right, parent_statement);
                     } else if (typed_node.operator.is(TokenType.BIGGER)) {
-                        final Object left = run(typed_node.left, parent_statement, null);
-                        final Object right = run(typed_node.right, parent_statement, null);
+                        final Object left = run(typed_node.left, parent_statement);
+                        final Object right = run(typed_node.right, parent_statement);
 
                         if (left instanceof Number && right instanceof Number) return ((double) left) > ((double) right);
                     } else if (typed_node.operator.is(TokenType.SMALLER)) {
-                        final Object left = run(typed_node.left, parent_statement, null);
-                        final Object right = run(typed_node.right, parent_statement, null);
+                        final Object left = run(typed_node.left, parent_statement);
+                        final Object right = run(typed_node.right, parent_statement);
 
                         if (left instanceof Number && right instanceof Number) return ((double) left) < ((double) right);
                     } else if (typed_node.operator.is(TokenType.BIGGER_OR_EQ)) {
-                        final Object left = run(typed_node.left, parent_statement, null);
-                        final Object right = run(typed_node.right, parent_statement, null);
+                        final Object left = run(typed_node.left, parent_statement);
+                        final Object right = run(typed_node.right, parent_statement);
 
                         if (left instanceof Number && right instanceof Number) return ((double) left) >= ((double) right);
                     } else if (typed_node.operator.is(TokenType.SMALLER_OR_EQ)) {
-                        final Object left = run(typed_node.left, parent_statement, null);
-                        final Object right = run(typed_node.right, parent_statement, null);
+                        final Object left = run(typed_node.left, parent_statement);
+                        final Object right = run(typed_node.right, parent_statement);
 
                         if (left instanceof Number && right instanceof Number) return ((double) left) <= ((double) right);
                     }
@@ -175,7 +177,7 @@ public class Interpreter {
                     else {
                         final Set<ConditionNode> successful_conditions = new HashSet<ConditionNode>();
 
-                        final Object main_condition_result = run(main_condition, parent_statement, null);
+                        final Object main_condition_result = run(main_condition, parent_statement);
 
                         if (main_condition_result != null && (boolean) main_condition_result) successful_conditions.add(main_condition);
 
@@ -188,8 +190,8 @@ public class Interpreter {
                             if (condition != null) {
                                 if (condition.context.equals("AND")) {
                                     if (previous != null) {
-                                        final Object left = run(previous, parent_statement, null);
-                                        final Object right = run(condition, parent_statement, null);
+                                        final Object left = run(previous, parent_statement);
+                                        final Object right = run(condition, parent_statement);
 
                                         if (left != null && right != null) {
                                             if (((boolean) left) && ((boolean) right)) {
@@ -200,8 +202,8 @@ public class Interpreter {
                                     }
                                 } else if (condition.context.equals("OR")) {
                                     if (previous != null) {
-                                        final Object left = run(previous, parent_statement, null);
-                                        final Object right = run(condition, parent_statement, null);
+                                        final Object left = run(previous, parent_statement);
+                                        final Object right = run(condition, parent_statement);
 
                                         if ((left == null || !((boolean) left) && (right != null && (boolean) right))) {
                                             successful_conditions.add(previous);
@@ -212,9 +214,9 @@ public class Interpreter {
                             }
                         }
 
-                        if (successful_conditions.size() == conditions_size) return run(typed_node.block, parent_statement, null);
+                        if (successful_conditions.size() == conditions_size) return run(typed_node.block, parent_statement);
                         else {
-                            if (typed_node.else_block != null) return run(typed_node.else_block, parent_statement, null);
+                            if (typed_node.else_block != null) return run(typed_node.else_block, parent_statement);
                         }
                     }
                 } else if (node instanceof BinaryOperationNode typed_node) {
@@ -237,8 +239,8 @@ public class Interpreter {
                             }
                         } else throw new FemscriptRuntimeExpection("Assign operator can only use with identifiers");
                     } else {
-                        final double left_number = (double) run(left, parent_statement, null);
-                        final double right_number = (double) run(right, parent_statement, null);
+                        final double left_number = (double) run(left, parent_statement);
+                        final double right_number = (double) run(right, parent_statement);
 
                         switch (operator.type) {
                             case DIV -> {
@@ -263,5 +265,20 @@ public class Interpreter {
 
 
         return null;
+    }
+
+    @Override
+    public Object run(Node node) {
+        return main_run(node, null, null);
+    }
+
+    @Override
+    public Object run(Node node, BlockNode parent_statement) {
+        return main_run(node, parent_statement, null);
+    }
+
+    @Override
+    public Object run(Node node, BlockNode parent_statement, Boolean assertion) {
+        return main_run(node, parent_statement, assertion);
     }
 }

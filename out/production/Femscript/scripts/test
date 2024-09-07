@@ -1,7 +1,3 @@
-using 'src/scripts/test2'
+def foo() -> 1
 
-fn bar(arg) {
-    -> arg
-}
-
-output foo('bar')
+output 2 + 2 + foo()
