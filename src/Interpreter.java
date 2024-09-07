@@ -268,8 +268,8 @@ public class Interpreter implements Run {
     }
 
     @Override
-    public Object run(Node node) {
-        return main_run(node, null, null);
+    public void run(Node node) {
+        main_run(node, null, null);
     }
 
     @Override
