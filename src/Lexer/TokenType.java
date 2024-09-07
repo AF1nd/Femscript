@@ -9,6 +9,7 @@ public enum TokenType {
     MINUS,
     DIV,
     MUL,
+    DEGREE,
 
     EQ,
     NOTEQ,

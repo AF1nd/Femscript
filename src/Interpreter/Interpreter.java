@@ -254,6 +254,9 @@ public class Interpreter implements Run {
                             case DIV -> {
                                 return left_number / right_number;
                             }
+                            case DEGREE -> {
+                                return Math.pow(left_number, right_number);
+                            }
                             case MUL -> {
                                 return left_number * right_number;
                             }

@@ -24,7 +24,7 @@ public class Parser {
             {TokenType.NUMBER, TokenType.STRING, TokenType.ID, TokenType.TRUE, TokenType.FALSE};
 
     private final TokenType[] _operators_token_types = new TokenType[]
-            {TokenType.ASSIGN, TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.DIV};
+            {TokenType.ASSIGN, TokenType.PLUS, TokenType.MINUS, TokenType.MUL, TokenType.DIV, TokenType.DEGREE};
 
     private final TokenType[] _unar_operators_token_types = new TokenType[]
             {TokenType.OUTPUT, TokenType.WAIT, TokenType.RETURN, TokenType.ASSERT};

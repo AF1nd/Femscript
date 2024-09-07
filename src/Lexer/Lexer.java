@@ -40,6 +40,7 @@ public class Lexer {
             new TokenTypeImpl(TokenType.ASSIGN, "="),
             new TokenTypeImpl(TokenType.PLUS, "\\+"),
             new TokenTypeImpl(TokenType.MINUS, "-"),
+            new TokenTypeImpl(TokenType.DEGREE, "\\^"),
             new TokenTypeImpl(TokenType.MUL, "\\*"),
             new TokenTypeImpl(TokenType.DIV, "/"),
 
