@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) throws FemscriptSyntaxException, IOException {
-        final Lexer lexer = new Lexer(false, "src/scripts/test");
+        final Lexer lexer = new Lexer(false, "src/FemscriptScripts/Main");
         final Parser parser = new Parser(lexer.tokenize());
         final BlockNode AST = parser.parse_all();
 
@@ -20,7 +20,7 @@ public class Main {
 
         System.out.println("\n RESULT: \n");
 
-        final Interpreter interpreter = new Interpreter("src/scripts/test");
+        final Interpreter interpreter = new Interpreter("src/scripts/Main");
         interpreter.run(AST, null, null);
     }
 }
