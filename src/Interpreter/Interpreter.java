@@ -1,3 +1,5 @@
+package Interpreter;
+
 import Exceptions.FemscriptRuntimeExpection;
 import Lexer.Lexer;
 import Lexer.Token;
@@ -15,7 +17,7 @@ public class Interpreter implements Run {
 
     private final String current_script_path;
 
-    Interpreter(String current_script_path) {
+    public Interpreter(String current_script_path) {
         this.current_script_path = current_script_path;
     }
 
@@ -42,12 +44,18 @@ public class Interpreter implements Run {
                         try {
                             result = run(_node, typed_node);
 
-                            if (_node instanceof UnarOperationNode unar_operation_node && unar_operation_node.operator.is(TokenType.RETURN)) {
-                                if (result != null) return result;
-                            } else  if (_node instanceof ReturnArrowSugarNode) {
-                                if (result != null) return result;
-                            } else if (_node instanceof IfStatementNode) {
-                                if (result != null) return result;
+                            switch (_node) {
+                                case UnarOperationNode unar_operation_node when unar_operation_node.operator.is(TokenType.RETURN) -> {
+                                    if (result != null) return result;
+                                }
+                                case ReturnArrowSugarNode returnArrowSugarNode -> {
+                                    if (result != null) return result;
+                                }
+                                case IfStatementNode ifStatementNode -> {
+                                    if (result != null) return result;
+                                }
+                                default -> {
+                                }
                             }
                         } catch (Exception err) {
                             err.printStackTrace();

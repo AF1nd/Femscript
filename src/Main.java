@@ -1,4 +1,5 @@
 import Exceptions.FemscriptSyntaxException;
+import Interpreter.Interpreter;
 import Lexer.Lexer;
 import Parser.AST.BlockNode;
 import Parser.Parser;
