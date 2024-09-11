@@ -271,8 +271,6 @@ public class Parser {
             if (left_bracket_token != null && left_bracket_token.is(TokenType.LEFT_BRACKET)) {
                 final FunctionCallNode node = new FunctionCallNode(token.value);
 
-                int right_bracket_index = 0;
-
                 int finded_left_brackets = 0;
                 int finded_right_brackets = 0;
 
