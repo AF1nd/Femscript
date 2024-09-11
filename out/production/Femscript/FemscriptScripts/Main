@@ -1,3 +1,0 @@
-def foo() -> 1
-
-output 2 ^ 2 + foo()
