@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class BlockNode extends Node implements Cloneable {
     public final List<Node> nodes = new ArrayList<Node>();
-    public final Map<String, Node> identifiers = new HashMap<String, Node>();
+    public final Map<String, Object> scope = new HashMap<String, Object>();
 
     public void add(Node node) {
         nodes.add(node);

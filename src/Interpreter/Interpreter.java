@@ -6,7 +6,6 @@ import Lexer.Token;
 import Lexer.TokenType;
 import Parser.AST.*;
 import Parser.Parser;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,9 +28,9 @@ public class Interpreter implements Run {
         try {
             if (node instanceof BlockNode typed_node) {
                 if (parent_statement != null) {
-                    parent_statement.identifiers.forEach((key, _node) -> {
-                        if (!typed_node.identifiers.containsKey(key)) {
-                            typed_node.identifiers.put(key, _node);
+                    parent_statement.scope.forEach((key, _node) -> {
+                        if (!typed_node.scope.containsKey(key)) {
+                            typed_node.scope.put(key, _node);
                         }
                     });
                 };
@@ -48,10 +47,10 @@ public class Interpreter implements Run {
                                 case UnarOperationNode unar_operation_node when unar_operation_node.operator.is(TokenType.RETURN) -> {
                                     if (result != null) return result;
                                 }
-                                case ReturnArrowSugarNode returnArrowSugarNode -> {
+                                case ReturnArrowSugarNode return_arrow_sugar_node -> {
                                     if (result != null) return result;
                                 }
-                                case IfStatementNode ifStatementNode -> {
+                                case IfStatementNode if_statement_node -> {
                                     if (result != null) return result;
                                 }
                                 default -> {
@@ -105,22 +104,22 @@ public class Interpreter implements Run {
                         new Interpreter(path).run(AST);
                     }
 
-                    parent_statement.identifiers.putAll(AST.identifiers);
+                    parent_statement.scope.putAll(AST.scope);
                 } else if (node instanceof IdentifierNode typed_node) {
-                    if (parent_statement.identifiers.containsKey(typed_node.identifier.value)) {
-                        return run(parent_statement.identifiers.get(typed_node.identifier.value), parent_statement);
+                    if (parent_statement.scope.containsKey(typed_node.identifier.value)) {
+                        return run((Node) (Object) parent_statement.scope.get(typed_node.identifier.value), parent_statement);
                     }
 
                     if (assertion != null && assertion) return null;
 
                     throw new FemscriptRuntimeExpection("ID " + typed_node.identifier.value + " doesn't exist");
                 } else if (node instanceof FunctionDefineNode typed_node) {
-                    parent_statement.identifiers.put(typed_node.id, typed_node);
+                    parent_statement.scope.put(typed_node.id, typed_node);
                 } else if (node instanceof FunctionCallNode typed_node) {
                     final String fn_id = typed_node.fn_id;
                     final List<Node> args = typed_node.args;
 
-                    final Node func = parent_statement.identifiers.get(fn_id);
+                    final Object func = parent_statement.scope.get(fn_id);
 
                     if (!(func instanceof FunctionDefineNode)) throw new FemscriptRuntimeExpection("Function " + fn_id + " doesn't exist");
 
@@ -130,7 +129,7 @@ public class Interpreter implements Run {
                         final Node arg = args.get(i);
                         final IdentifierNode _arg = ((FunctionDefineNode) func).args.get(i);
 
-                        if (_arg != null) block.identifiers.put(_arg.identifier.value, arg);
+                        if (_arg != null) block.scope.put(_arg.identifier.value, arg);
                     }
 
                     return run(block, parent_statement);
@@ -238,11 +237,13 @@ public class Interpreter implements Run {
                             final int node_index = parent_statement.nodes.indexOf(node);
                             final Node previous_node = node_index > 0 ? parent_statement.nodes.get(node_index - 1) : null;
 
+                            final Object value = run(right);
+
                             if (previous_node instanceof VariableDefineNode) {
-                                parent_statement.identifiers.put(typed_left.identifier.value, right);
+                                parent_statement.scope.put(typed_left.identifier.value, value != null ? value : right);
                             } else {
-                                if (parent_statement.identifiers.containsKey(typed_left.identifier.value)) {
-                                    parent_statement.identifiers.put(typed_left.identifier.value, right);
+                                if (parent_statement.scope.containsKey(typed_left.identifier.value)) {
+                                    parent_statement.scope.put(typed_left.identifier.value, value != null ? value : right);
                                 } else throw new FemscriptRuntimeExpection("Variable " + typed_left.identifier.value + " doesn't defined");
                             }
                         } else throw new FemscriptRuntimeExpection("Assign operator can only use with identifiers");
@@ -279,8 +280,8 @@ public class Interpreter implements Run {
     }
 
     @Override
-    public void run(Node node) {
-        main_run(node, null, null);
+    public Object run(Node node) {
+       return main_run(node, null, null);
     }
 
     @Override
