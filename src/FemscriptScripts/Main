@@ -1,3 +1,5 @@
-def foo() -> 1
+def foo(n):
+    <- n
+end
 
-output 1 + foo()
+output foo(1)

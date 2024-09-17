@@ -54,8 +54,8 @@ public class Lexer {
             new TokenTypeImpl(TokenType.LEFT_BRACKET, "\\("),
             new TokenTypeImpl(TokenType.RIGHT_BRACKET, "\\)"),
 
-            new TokenTypeImpl(TokenType.BEGIN, "\\{"),
-            new TokenTypeImpl(TokenType.END, "}"),
+            new TokenTypeImpl(TokenType.BEGIN, ":"),
+            new TokenTypeImpl(TokenType.END, "end"),
 
             new TokenTypeImpl(TokenType.COMMA, ","),
             new TokenTypeImpl(TokenType.DOT, "\\."),
