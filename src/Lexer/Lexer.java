@@ -15,7 +15,7 @@ public class Lexer {
     private boolean _debug = false;
 
     private Integer _position = 0;
-    private List<Token> _tokens = new ArrayList<Token>();
+    private List<Token> _tokens = new ArrayList<>();
 
     private final TokenTypeImpl[] _token_types = {
             new TokenTypeImpl(TokenType.VARIABLE, "var"),

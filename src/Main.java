@@ -3,7 +3,6 @@ import Interpreter.Interpreter;
 import Lexer.Lexer;
 import Parser.AST.BlockNode;
 import Parser.Parser;
-
 import java.io.IOException;
 
 public class Main {
@@ -15,7 +14,7 @@ public class Main {
         System.out.println("ABSTRACT SYNTAX TREE: \n");
 
         AST.nodes.forEach(node -> {
-           if (node.toString() != null) System.out.println(" | " + node);
+           if (node.toString() != null) System.out.println(node);
         });
 
         System.out.println("\n RESULT: \n");

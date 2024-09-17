@@ -13,6 +13,6 @@ public class UnarOperationNode extends Node {
 
     @Override
     public String toString() {
-        return "[OPERATOR]: " + operator.value + " | [OPPERRAND]: " + right.toString();
+        return "operator: " + operator.value + " | opperrand: " + right;
     }
 }

@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 public class BlockNode extends Node implements Cloneable {
-    public final List<Node> nodes = new ArrayList<Node>();
-    public final Map<String, Object> scope = new HashMap<String, Object>();
+    public final List<Node> nodes = new ArrayList<>();
+    public final Map<String, Object> scope = new HashMap<>();
 
     public void add(Node node) {
         nodes.add(node);
@@ -16,5 +16,10 @@ public class BlockNode extends Node implements Cloneable {
     @Override
     public BlockNode clone() throws CloneNotSupportedException {
         return (BlockNode) super.clone();
+    }
+
+    @Override
+    public String toString() {
+        return "\n block: \n" + nodes.toString() + "\n end";
     }
 }

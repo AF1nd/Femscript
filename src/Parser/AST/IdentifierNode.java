@@ -11,6 +11,6 @@ public class IdentifierNode extends Node {
 
     @Override
     public String toString() {
-        return "ID: " + identifier.value;
+        return "id " + identifier.value;
     }
 }

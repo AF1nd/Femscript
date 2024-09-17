@@ -12,4 +12,8 @@ public class IfStatementNode extends Node {
         this.block = block;
         this.else_block = else_block;
     }
+
+    public String toString() {
+        return "if statement" + block + "\n else statement:" + else_block;
+    }
 }

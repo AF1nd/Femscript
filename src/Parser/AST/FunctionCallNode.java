@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionCallNode extends Node {
-    public final List<Node> args = new ArrayList<Node>();
+    public final List<Node> args = new ArrayList<>();
     public final String fn_id;
 
     public FunctionCallNode(String fn_id) {
@@ -17,6 +17,6 @@ public class FunctionCallNode extends Node {
 
     @Override
     public String toString() {
-        return "[ FUNC CALL NODE ]: [FUNC]: " + fn_id + " [ARGS]: " + args.toString();
+        return "call " + fn_id + " with args: " + args;
     }
 }

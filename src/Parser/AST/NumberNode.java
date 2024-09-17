@@ -11,6 +11,6 @@ public class NumberNode extends Node {
 
     @Override
     public String toString() {
-        return "NUM: " + value.value;
+        return "number: " + value.value;
     }
 }

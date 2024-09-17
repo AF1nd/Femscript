@@ -28,12 +28,12 @@ public class Interpreter implements Run {
         try {
             if (node instanceof BlockNode typed_node) {
                 if (parent_statement != null) {
-                    parent_statement.scope.forEach((key, _node) -> {
+                    parent_statement.scope.forEach((key, obj) -> {
                         if (!typed_node.scope.containsKey(key)) {
-                            typed_node.scope.put(key, _node);
+                            typed_node.scope.put(key, obj);
                         }
                     });
-                };
+                }
 
                 for (int i = 0; i < typed_node.nodes.size(); i++) {
                     final Node _node = typed_node.nodes.get(i);
@@ -77,7 +77,7 @@ public class Interpreter implements Run {
                         }
                         
                         
-                        if (opperrand == null) {
+                        if (opperrand == null && !operator.is(TokenType.OUTPUT)) {
                             throw new FemscriptRuntimeExpection("Unar operator must have one opperrand");
                         }
                         
@@ -85,7 +85,7 @@ public class Interpreter implements Run {
                             if (!(opperrand instanceof Number)) throw new FemscriptRuntimeExpection("Delay operator can work only with numbers");
                             
                             try {
-                                Thread.sleep((long) ((double) opperrand * 1000));
+                                Thread.sleep((long) ((long) opperrand * 1000));
                             } catch (InterruptedException err) {
                                 err.printStackTrace();
                             }
@@ -113,7 +113,9 @@ public class Interpreter implements Run {
                     }
                     case IdentifierNode typed_node -> {
                         if (parent_statement.scope.containsKey(typed_node.identifier.value)) {
-                            return run((Node) (Object) parent_statement.scope.get(typed_node.identifier.value), parent_statement);
+                            final Object value = parent_statement.scope.get(typed_node.identifier.value);
+
+                            return value;
                         }
                     }
                     case FunctionDefineNode typed_node -> parent_statement.scope.put(typed_node.id, typed_node);
@@ -129,18 +131,19 @@ public class Interpreter implements Run {
                         
                         for (int i = 0; i < args.size(); i++) {
                             final Node arg = args.get(i);
+                            
                             final IdentifierNode _arg = ((FunctionDefineNode) func).args.get(i);
 
                             if (_arg != null) {
                                 if (!(_arg instanceof IdentifierNode)) throw new FemscriptRuntimeExpection("Argument in function define must be identifier");
-                                block.scope.put(_arg.identifier.value, arg);
+                                block.scope.put(_arg.identifier.value, run(arg, parent_statement));
                             }
                         }
                         
                         return run(block, parent_statement);
                     }
                     case NumberNode typed_node -> {
-                        return Double.valueOf(typed_node.value.value);
+                        return Long.valueOf(typed_node.value.value);
                     }
                     case StringNode typed_node -> {
                         return typed_node.value.value.substring(1, typed_node.value.value.length() - 1);
@@ -155,30 +158,21 @@ public class Interpreter implements Run {
                         return run(typed_node.value, parent_statement);
                     }
                     case ConditionNode typed_node -> {
+                        final Object left = run(typed_node.left, parent_statement);
+                        final Object right = run(typed_node.right, parent_statement);
+
                         if (typed_node.operator.is(TokenType.EQ)) {
-                            return run(typed_node.left, parent_statement) == run(typed_node.right, parent_statement);
+                            return left == right;
                         } else if (typed_node.operator.is(TokenType.NOTEQ)) {
-                            return run(typed_node.left, parent_statement) != run(typed_node.right, parent_statement);
+                            return left != right;
                         } else if (typed_node.operator.is(TokenType.BIGGER)) {
-                            final Object left = run(typed_node.left, parent_statement);
-                            final Object right = run(typed_node.right, parent_statement);
-                            
-                            if (left instanceof Number && right instanceof Number) return ((double) left) > ((double) right);
+                            if (left instanceof Number && right instanceof Number) return ((long) left) > ((long) right);
                         } else if (typed_node.operator.is(TokenType.SMALLER)) {
-                            final Object left = run(typed_node.left, parent_statement);
-                            final Object right = run(typed_node.right, parent_statement);
-                            
-                            if (left instanceof Number && right instanceof Number) return ((double) left) < ((double) right);
+                            if (left instanceof Number && right instanceof Number) return ((long) left) < ((long) right);
                         } else if (typed_node.operator.is(TokenType.BIGGER_OR_EQ)) {
-                            final Object left = run(typed_node.left, parent_statement);
-                            final Object right = run(typed_node.right, parent_statement);
-                            
-                            if (left instanceof Number && right instanceof Number) return ((double) left) >= ((double) right);
+                            if (left instanceof Number && right instanceof Number) return ((long) left) >= ((long) right);
                         } else if (typed_node.operator.is(TokenType.SMALLER_OR_EQ)) {
-                            final Object left = run(typed_node.left, parent_statement);
-                            final Object right = run(typed_node.right, parent_statement);
-                            
-                            if (left instanceof Number && right instanceof Number) return ((double) left) <= ((double) right);
+                            if (left instanceof Number && right instanceof Number) return ((long) left) <= ((long) right);
                         }
                     }
                     case IfStatementNode typed_node -> {
@@ -196,7 +190,7 @@ public class Interpreter implements Run {
                         else {
                             final Set<ConditionNode> successful_conditions = new HashSet<>();
                             
-                            final var main_condition_result = run(main_condition, parent_statement);
+                            final Object main_condition_result = run(main_condition, parent_statement);
                             
                             if (main_condition_result != null && (boolean) main_condition_result) successful_conditions.add(main_condition);
                             
@@ -261,8 +255,8 @@ public class Interpreter implements Run {
                                 }
                             } else throw new FemscriptRuntimeExpection("Assign operator can only use with identifiers");
                         } else {
-                            final double left_number = (double) run(left, parent_statement);
-                            final double right_number = (double) run(right, parent_statement);
+                            final long left_number = (long) run(left, parent_statement);
+                            final long right_number = (long) run(right, parent_statement);
                             
                             switch (operator.type) {
                                 case DIV -> {
@@ -283,8 +277,7 @@ public class Interpreter implements Run {
                             }
                         }
                     }
-                    default -> {
-                    }
+                    default -> {}
                 }
             }
         } catch (Exception err) {

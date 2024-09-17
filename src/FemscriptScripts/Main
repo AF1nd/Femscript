@@ -1,5 +1,10 @@
-def foo(n):
-    <- n
+def factorial(n):
+    if n == 1:
+        <- n
+    end 
+    else:
+        <- n * factorial(n - 1)
+    end
 end
 
-output foo(1)
+output factorial(2)

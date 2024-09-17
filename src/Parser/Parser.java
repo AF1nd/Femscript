@@ -4,7 +4,6 @@ import Exceptions.FemscriptSyntaxException;
 import Lexer.Token;
 import Lexer.TokenType;
 import Parser.AST.*;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,7 +17,7 @@ public class Parser {
 
     private final BlockNode _root_node = new BlockNode();
 
-    private static final List<Token> _parsed_tokens = new ArrayList<Token>();
+    private static final List<Token> _parsed_tokens = new ArrayList<>();
 
     private final TokenType[] _arguments_or_values_token_types = new TokenType[]
             {TokenType.NUMBER, TokenType.STRING, TokenType.ID, TokenType.TRUE, TokenType.FALSE};
@@ -55,9 +54,12 @@ public class Parser {
     private NeededCallback needed(Integer base_index) {
         return (offset, types) -> {
             int index = base_index + offset;
-            Token token = _tokens.get(index);
+            Token token = get_token_by_index(index);
 
-            if (token == null | (token != null && !token.is(types))) throw new FemscriptSyntaxException("Expected token " + Arrays.toString(types), _current_line);
+            if (token == null | (token != null && !token.is(types))) {
+                if (token != null) System.out.println(token.value);
+                throw new FemscriptSyntaxException("Expected token " + Arrays.toString(types), _current_line);
+            }
             else {
                 return token;
             }
@@ -65,7 +67,7 @@ public class Parser {
     }
 
     private VariableDefineNode parse_variable_define(int index) {
-        final Token token = _tokens.get(index);
+        final Token token = get_token_by_index(index);
         if (token != null && token.is(TokenType.VARIABLE) && !is_parsed(token)) {
             push_to_parsed(token);
             return new VariableDefineNode(token);
@@ -88,9 +90,9 @@ public class Parser {
     }
 
     private UnarOperationNode parse_unar_operation(int index) throws FemscriptSyntaxException {
-        final Token token = _tokens.get(index);
+        final Token token = get_token_by_index(index);
         if (token != null && token.is(_unar_operators_token_types) && !is_parsed(token)) {
-            Node opperrand = null;
+            Node opperrand;
 
             opperrand = parse_arg_or_value(index + 1);
 
@@ -104,18 +106,18 @@ public class Parser {
     }
 
     private IfStatementNode parse_if_statement(int index) throws FemscriptSyntaxException {
-        final Token token = _tokens.get(index);
+        final Token token = get_token_by_index(index);
         if (token != null && token.is(TokenType.IF) && !is_parsed(token)) {
             final ConditionNode condition = parse_condition(index + 2);
             if (condition == null) throw new FemscriptSyntaxException("If-statement must have main condition", _current_line);
 
-            final List<ConditionNode> conditions = new ArrayList<ConditionNode>();
+            final List<ConditionNode> conditions = new ArrayList<>();
             conditions.add(condition);
 
             int begin_index = 0;
 
             for (int i = index; i < _tokens.size(); i++) {
-                final Token token_under_index = _tokens.get(i);
+                final Token token_under_index = get_token_by_index(i);
                 if (token_under_index.is(TokenType.BEGIN) && !is_parsed(token_under_index)) {
                     begin_index = i;
                     break;
@@ -124,12 +126,13 @@ public class Parser {
 
             if (begin_index == 0) throw new FemscriptSyntaxException("If-statement must have block begin", _current_line);
 
-            final Tuple<List<Token>, Integer> result = get_block_info(begin_index);
+            final Tuple<BlockNode, Integer> result = block(begin_index);
+
             if (result != null) {
                 for (int i = index + 2; i < begin_index; i++) {
                     final ConditionNode node = parse_condition(i);
                     if (node != null) {
-                        final Token prev_token = _tokens.get(i - 2);
+                        final Token prev_token = get_token_by_index(i - 2);
                         if (prev_token != null && !prev_token.is(_logical_operators_token_types))
                             throw new FemscriptSyntaxException("Between conditions need ? or &", _current_line);
 
@@ -141,7 +144,7 @@ public class Parser {
 
                 final BlockNode else_statement = parse_else_statement(result.second() + 1);
                 if (!conditions.isEmpty())
-                    return new IfStatementNode(conditions, new Parser(result.first()).parse_all(), else_statement);
+                    return new IfStatementNode(conditions, result.first(), else_statement);
                 else throw new FemscriptSyntaxException("If-statement must have > 0 conditions", _current_line);
             }
         }
@@ -155,7 +158,7 @@ public class Parser {
             int begin_index = 0;
 
             for (int i = index; i < _tokens.size(); i++) {
-                final Token token_under_index = _tokens.get(i);
+                final Token token_under_index = get_token_by_index(i);
                 if (token_under_index.is(TokenType.BEGIN) && !is_parsed(token_under_index)) {
                     begin_index = i;
                     break;
@@ -164,14 +167,14 @@ public class Parser {
 
             if (begin_index == 0) throw new FemscriptSyntaxException("Else-statement must have block begin", _current_line);
 
-            final Tuple<List<Token>, Integer> result = get_block_info(begin_index);
+            final Tuple<BlockNode, Integer> result = block(begin_index);
             if (result != null) {
+                push_to_parsed(token);
+
                 final BlockNode statement = new BlockNode();
-                final BlockNode ast = new Parser(result.first()).parse_all();
+                final BlockNode ast = result.first();
 
                 ast.nodes.forEach(statement::add);
-
-                this.push_to_parsed(token);
 
                 return statement;
             }
@@ -181,14 +184,16 @@ public class Parser {
     }
 
     private FunctionDefineNode parse_function_define(int index) throws FemscriptSyntaxException {
-        final Token token = _tokens.get(index);
+        final Token token = get_token_by_index(index);
         if (token != null && token.is(TokenType.DEFINE_FUNCTION) && !is_parsed(token)) {
             final NeededCallback needed_descriptor = needed(index);
 
             final Token id_token = needed_descriptor.needed(1, new TokenType[] {TokenType.ID});
 
             final Tuple<List<Node>, Integer> args = arguments(index + 2);
-            BlockNode block = block(args.second() + 1);
+            final Tuple<BlockNode, Integer> result = block(args.second() + 1);
+
+            BlockNode block = result != null ? result.first() : null;
 
             if (block == null) {
                 final Token arrow = get_token_by_index(args.second() + 1);
@@ -232,6 +237,8 @@ public class Parser {
                 final Tuple<List<Node>, Integer> args = arguments(index + 1);
 
                 args.first().forEach(node::add_arg);
+
+                push_to_parsed(token);
 
                 return node;
             }
@@ -342,51 +349,35 @@ public class Parser {
         return null;
     }
 
-    private Tuple<List<Token>, Integer> get_block_info(int block_start_index) throws FemscriptSyntaxException {
-        final Token token = get_token_by_index(block_start_index);
+    private Tuple<BlockNode, Integer> block(int index) throws FemscriptSyntaxException {
+        needed(index).needed(0, new TokenType[] { TokenType.BEGIN });
 
-        if (token != null && token.is(TokenType.BEGIN)) {
-            int begins_finded = 0;
-            int ends_finded = 0;
+        int finded_begins = 0;
+        int finded_ends = 0;
 
-            int end_index = 0;
+        int end_index = 0;
 
-            final List<Token> tokens = new ArrayList<>();
+        final List<Token> tokens = new ArrayList<>();
 
-            for (int i = block_start_index; i < _tokens.size(); i++) {
-                final Token token_under_index = get_token_by_index(i);
-                if (token_under_index != null) {
-                    if (token_under_index.is(TokenType.END) && !is_parsed(token_under_index)) {
-                        ends_finded++;
-                        end_index = i;
-                    } else if (token_under_index.is(TokenType.BEGIN) && !is_parsed(token_under_index)) {
-                        begins_finded++;
-                    }
+        System.out.println(index);
+        tokens.forEach(token -> System.out.println(token.value));
 
-                    tokens.add(token_under_index);
-
-                    if (ends_finded == begins_finded && begins_finded > 0) break;
+        for (int i = index; i < _tokens.size(); i++) {
+            final Token token = get_token_by_index(i);
+            if (token != null) {
+                if (token.is(TokenType.BEGIN)) finded_begins ++;
+                else if (token.is(TokenType.END)) {
+                    finded_ends ++;
+                    end_index = i;
                 }
-            }
+            }   
 
-            if (begins_finded != ends_finded) throw new FemscriptSyntaxException("Block doesn't have end", _current_line);
+            tokens.add(token);
 
-            return new Tuple<>(tokens, end_index);
+            if (finded_begins == finded_ends && finded_begins > 0) break;
         }
 
-        return null;
-    }
-
-    private BlockNode block(int index) throws FemscriptSyntaxException {
-        final Tuple<List<Token>, Integer> info = get_block_info(index);
-
-        if (info != null) {
-            final List<Token> tokens = info.first();
-
-            return new Parser(tokens).parse_all();
-        }
-
-        return null;
+        return new Tuple<>(new Parser(tokens).parse_all(), end_index);
     }
 
     private Tuple<List<Node>, Integer> arguments(int index) throws FemscriptSyntaxException {
@@ -407,8 +398,12 @@ public class Parser {
                     right_brackets_finded ++;
                 }
                 else {
-                    final Node node = parse_arg_or_value(i);
-                    if (node != null) args.add(node);
+                    try {
+                        final Node node = parse_arg_or_value(i);
+                        if (node != null) args.add(node);
+                    } catch (Exception e) {
+
+                    }
                 }
 
                 if (left_brackets_finded == right_brackets_finded) break;
